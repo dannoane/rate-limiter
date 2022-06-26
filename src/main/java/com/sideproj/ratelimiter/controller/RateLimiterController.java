@@ -1,10 +1,12 @@
 package com.sideproj.ratelimiter.controller;
 
+import com.sideproj.ratelimiter.configuration.RateLimiterConfiguration;
 import lombok.val;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.RequestBody;
 import okhttp3.Response;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -25,6 +27,8 @@ import java.util.stream.Collectors;
 
 @RestController
 public class RateLimiterController {
+    @Autowired
+    private RateLimiterConfiguration configuration;
     private final OkHttpClient httpClient = new OkHttpClient();
     private static final Set<String> methodsWithoutBody = new HashSet<>(Arrays.asList("get", "head"));
 
@@ -32,11 +36,9 @@ public class RateLimiterController {
     public void rateLimit(HttpServletRequest orgReq, HttpServletResponse orgRes) {
         System.out.println(orgReq.getServletPath());
 
-        val path = orgReq.getServletPath();
-        val targetUrl = "http://localhost:8000";
-
         try {
-            val requestBuilder = new Request.Builder().url(targetUrl + path);
+            val path = orgReq.getServletPath();
+            val requestBuilder = new Request.Builder().url(configuration.getTargetUrl() + path);
 
             if (acceptsBody(orgReq)) {
                 requestBuilder.method(orgReq.getMethod(), buildRequestBody(orgReq));
