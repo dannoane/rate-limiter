@@ -42,21 +42,20 @@ public class RateLimiterController {
                 requestBuilder.method(orgReq.getMethod(), buildRequestBody(orgReq));
             }
 
-            getHeaders(orgReq).forEach((headerName, headerValues) -> {
-                headerValues.forEach(headerValue -> requestBuilder.addHeader(headerName, headerValue));
-            });
+            getHeaders(orgReq).forEach((headerName, headerValues) -> headerValues.forEach(headerValue -> requestBuilder.addHeader(headerName, headerValue)));
 
             val request = requestBuilder.build();
             val response = httpClient.newCall(request).execute();
 
-            getHeaders(response).forEach((headerName, headerValues) -> {
-                headerValues.forEach(headerValue -> orgRes.addHeader(headerName, headerValue));
-            });
+            getHeaders(response).forEach((headerName, headerValues) -> headerValues.forEach(headerValue -> orgRes.addHeader(headerName, headerValue)));
 
             orgRes.setStatus(response.code());
 
-            orgRes.getWriter().write(response.body().string());
-            orgRes.getWriter().flush();
+            val body = response.body();
+            if (body != null) {
+                orgRes.getWriter().write(body.string());
+                orgRes.getWriter().flush();
+            }
         } catch (IOException e) {
             System.out.println("ERROR");
         }
