@@ -2,3 +2,9 @@ configuration:
   targetProtocol: http
   targetHost: localhost
   targetPort: 8000
+  endpoints:
+    - path: /*
+      numberOfRequests: 5
+      window: 1
+      strategy: TOKEN_BUCKET
+      limitBy: ALL_REQUESTS

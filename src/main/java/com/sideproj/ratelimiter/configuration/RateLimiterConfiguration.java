@@ -7,6 +7,8 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.PropertySource;
 
+import java.util.ArrayList;
+
 @Configuration
 @ConfigurationProperties(prefix = "configuration")
 @PropertySource(value = "classpath:configuration.yml", factory = YamlPropertySourceFactory.class)
@@ -17,6 +19,8 @@ public class RateLimiterConfiguration {
     private String targetHost;
     @Getter @Setter
     private String targetPort;
+    @Getter @Setter @NonNull
+    private ArrayList<Endpoint> endpoints;
 
     public String getTargetUrl() {
         StringBuilder url = new StringBuilder();
