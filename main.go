@@ -1,9 +1,12 @@
 package main
 
 import (
+	"fmt"
 	"io"
 	"log"
 	"net/http"
+
+	"github.com/dannoane/rate-limiter/configuration"
 )
 
 var hopByHopHeaders = []string{
@@ -39,31 +42,35 @@ func copyBody(dest http.ResponseWriter, body io.ReadCloser) {
 	io.Copy(dest, body)
 }
 
-func handler(w http.ResponseWriter, req *http.Request) {
-	log.Printf("[+] Got %s %s request path %s", req.Proto, req.Method, req.URL)
+func getHandler(config configuration.RateLimiterConfiguration) func(w http.ResponseWriter, req *http.Request) {
+	return func(w http.ResponseWriter, req *http.Request) {
+		log.Printf("[+] Got %s %s request path %s", req.Proto, req.Method, req.URL)
 
-	req.URL.Host = "localhost:5000"
-	req.URL.Scheme = "http"
-	req.RequestURI = ""
-	deleteHopByHopHeaders(req.Header)
+		req.URL.Host = fmt.Sprintf("%s:%s", config.TargetHost, config.TargetPort)
+		req.URL.Scheme = "http"
+		req.RequestURI = ""
+		deleteHopByHopHeaders(req.Header)
 
-	client := &http.Client{}
-	resp, err := client.Do(req)
+		client := &http.Client{}
+		resp, err := client.Do(req)
 
-	if err != nil {
-		log.Fatalf("[-] Client server error %s", err)
-		http.Error(w, "Server error", http.StatusInternalServerError)
+		if err != nil {
+			log.Fatalf("[-] Client server error %s", err)
+			http.Error(w, "Server error", http.StatusInternalServerError)
+		}
+
+		defer resp.Body.Close()
+
+		deleteHopByHopHeaders(resp.Header)
+		copyHeaders(w.Header(), resp.Header)
+		setStatusCode(w, resp.StatusCode)
+		copyBody(w, resp.Body)
 	}
-
-	defer resp.Body.Close()
-
-	deleteHopByHopHeaders(resp.Header)
-	copyHeaders(w.Header(), resp.Header)
-	setStatusCode(w, resp.StatusCode)
-	copyBody(w, resp.Body)
 }
 
 func main() {
-	http.HandleFunc("/", handler)
+	config := configuration.LoadConfiguration()
+
+	http.HandleFunc("/", getHandler(config))
 	log.Fatal(http.ListenAndServe(":3333", nil))
 }
