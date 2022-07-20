@@ -8,6 +8,7 @@ import (
 type RateLimiterConfiguration struct {
 	TargetHost string `json:"targetHost"`
 	TargetPort string `json:"targetPort"`
+	Endpoints  []Endpoint
 }
 
 func LoadConfiguration() RateLimiterConfiguration {
